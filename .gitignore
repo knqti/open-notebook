@@ -2,3 +2,4 @@ docker-compose.yml
 notebook_data
 sources
 surreal_data
+sources_to_upload/*
