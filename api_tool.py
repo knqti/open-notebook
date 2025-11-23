@@ -1,5 +1,5 @@
 from pathlib import Path
-from helpers import (
+from api_helpers import (
     APIClient,
     confirm_upload_dir,
     extract_notebook_id,
