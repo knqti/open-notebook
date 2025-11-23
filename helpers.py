@@ -1,4 +1,21 @@
 from pathlib import Path
+import requests
+
+class APIClient:
+    def __init__(self, base_url):
+        self.base_url = base_url
+
+    def get(self, endpoint, params=None):
+        response = requests.get(f'{self.base_url}{endpoint}', params=params)
+        return response.json()
+    
+    def post_data(self, endpoint, data=None, files=None):
+        response = requests.post(f'{self.base_url}{endpoint}', data=data, files=files)
+        return response.json()
+    
+    def post_json(self, endpoint, json=None, files=None):
+        response = requests.post(f'{self.base_url}{endpoint}', json=json, files=files)
+        return response.json()
 
 def confirm_upload_dir(directory) -> object:
     user_input = input(f'Files to be uploaded are in "{directory}" (y/n): ')
@@ -10,7 +27,11 @@ def confirm_upload_dir(directory) -> object:
 
 def extract_notebook_id(notebooks: list, existing_notebook_names: list) -> str:
     # Check if notebook exists
-    target_notebook_name = input('Enter the notebook name: ').strip()
+    print('\nEnter the notebook name:')
+    for name in existing_notebook_names:
+        print(name)
+    
+    target_notebook_name = input('>> ').strip()
     existing_set = set(existing_notebook_names)
     
     if target_notebook_name not in existing_set:
@@ -22,21 +43,8 @@ def extract_notebook_id(notebooks: list, existing_notebook_names: list) -> str:
         if target_notebook_name == notebook['name']:
             notebook_id = notebook['id']
     # notebook_id = [notebook['id'] for notebook in notebooks if target_notebook_name == notebook['name']]
-            print(f'Extracted notebook ID: {notebook_id}')
+            # print(f'Extracted notebook ID: {notebook_id}')
             return notebook_id 
-
-def create_transformations_dict(transformations: list, existing_transformation_names: list) -> dict:
-    transformations_dict = {}
-
-    for name in existing_transformation_names:
-
-        for item in transformations:
-            if item['name'] == name:
-                transformations_dict[name] = item['id']
-                break
-
-    # print(f'Created transformations dictionary: {transformations_dict}')
-    return transformations_dict
 
 def upload_sources(api_client, directory, existing_sources, target_notebook_id):
     existing_set = set(existing_sources)
@@ -56,10 +64,22 @@ def upload_sources(api_client, directory, existing_sources, target_notebook_id):
                 'async_processing': True
             }
 
-            response = api_client.post(
+            response = api_client.post_data(
                 endpoint='/api/sources',
                 data=source_metadata,
                 files={'file': f}
             )
 
-            print(f'Called API to post new source: {file.name}\nResponse: {response}')
+            print(f'Posted source "{response['title']}" with ID "{response['id']}"')
+
+def create_insight(api_client, source_id, transformation_id, model_id):
+    response = api_client.post_json(
+        endpoint=f'/api/sources/{source_id}/insights', 
+        json={
+            'transformation_id': transformation_id,
+            'model_id': model_id
+        }
+    )
+
+    print(f'Posted transformation insight "{response['insight_type']}" on source ID "{response['source_id']}"')
+    
